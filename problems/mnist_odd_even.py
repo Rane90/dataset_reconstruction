@@ -3,7 +3,9 @@ import torchvision.datasets
 import torchvision.transforms
 
 
-def load_bound_dataset(dataset, batch_size, shuffle=False, start=None, end=None, **kwargs):
+def load_bound_dataset(
+    dataset, batch_size, shuffle=False, start=None, end=None, **kwargs
+):
     def _bound_dataset(dataset, start, end):
         if start is None:
             start = 0
@@ -16,19 +18,29 @@ def load_bound_dataset(dataset, batch_size, shuffle=False, start=None, end=None,
 
 
 def fetch_mnist(root, train=False, transform=None, target_transform=None):
-    transform = transform if transform is not None else torchvision.transforms.ToTensor()
-    dataset = torchvision.datasets.MNIST(root, train=train, transform=transform, target_transform=target_transform, download=True)
+    transform = (
+        transform if transform is not None else torchvision.transforms.ToTensor()
+    )
+    dataset = torchvision.datasets.MNIST(
+        root,
+        train=train,
+        transform=transform,
+        target_transform=target_transform,
+        download=True,
+    )
     return dataset
 
 
-def load_mnist(root, batch_size, train=False, transform=None, target_transform=None, **kwargs):
+def load_mnist(
+    root, batch_size, train=False, transform=None, target_transform=None, **kwargs
+):
     dataset = fetch_mnist(root, train, transform, target_transform)
     return load_bound_dataset(dataset, batch_size, **kwargs)
 
 
 def move_to_type_device(x, y, device):
-    print('X:', x.shape)
-    print('y:', y.shape)
+    print("X:", x.shape)
+    print("y:", y.shape)
     x = x.to(torch.get_default_dtype())
     y = y.to(torch.get_default_dtype())
     x, y = x.to(device), y.to(device)
@@ -42,7 +54,7 @@ def create_labels(y0):
 
 
 def get_balanced_data(args, data_loader, data_amount):
-    print('BALANCING DATASET...')
+    print("BALANCING DATASET...")
     # get balanced data
     data_amount_per_class = data_amount // 2
 
@@ -56,7 +68,9 @@ def get_balanced_data(args, data_loader, data_amount):
                 labels_counter[int(by[i])] += 1
                 x0.append(bx[i])
                 y0.append(by[i])
-            if (labels_counter[0] >= data_amount_per_class) and (labels_counter[1] >= data_amount_per_class):
+            if (labels_counter[0] >= data_amount_per_class) and (
+                labels_counter[1] >= data_amount_per_class
+            ):
                 got_enough = True
                 break
         if got_enough:
@@ -67,20 +81,36 @@ def get_balanced_data(args, data_loader, data_amount):
 
 def load_mnist_data(args):
     # Get Train Set
-    data_loader = load_mnist(root=args.datasets_dir, batch_size=100, train=True, shuffle=False, start=0, end=50000)
+    data_loader = load_mnist(
+        root=args.datasets_dir,
+        batch_size=100,
+        train=True,
+        shuffle=False,
+        start=0,
+        end=50000,
+    )
     x0, y0 = get_balanced_data(args, data_loader, args.data_amount)
 
     # Get Test Set
-    print('LOADING TESTSET')
-    assert not args.data_use_test or (args.data_use_test and args.data_test_amount >= 2), f"args.data_use_test={args.data_use_test} but args.data_test_amount={args.data_test_amount}"
-    data_loader = load_mnist(root=args.datasets_dir, batch_size=100, train=False, shuffle=False, start=0, end=10000)
+    print("LOADING TESTSET")
+    assert not args.data_use_test or (
+        args.data_use_test and args.data_test_amount >= 2
+    ), f"args.data_use_test={args.data_use_test} but args.data_test_amount={args.data_test_amount}"
+    data_loader = load_mnist(
+        root=args.datasets_dir,
+        batch_size=100,
+        train=False,
+        shuffle=False,
+        start=0,
+        end=10000,
+    )
     x0_test, y0_test = get_balanced_data(args, data_loader, args.data_test_amount)
 
     # move to cuda and double
     x0, y0 = move_to_type_device(x0, y0, args.device)
     x0_test, y0_test = move_to_type_device(x0_test, y0_test, args.device)
 
-    print(f'BALANCE: 0: {y0[y0 == 0].shape[0]}, 1: {y0[y0 == 1].shape[0]}')
+    print(f"BALANCE: 0: {y0[y0 == 0].shape[0]}, 1: {y0[y0 == 1].shape[0]}")
 
     return [(x0, y0)], [(x0_test, y0_test)], None
 
@@ -89,10 +119,12 @@ def get_dataloader(args):
     args.input_dim = 28 * 28
     args.num_classes = 2
     args.output_dim = 1
-    args.dataset = 'mnist'
+    args.dataset = "mnist"
 
-    if args.run_mode == 'reconstruct':
-        args.extraction_data_amount = args.extraction_data_amount_per_class * args.num_classes
+    if args.run_mode == "reconstruct":
+        args.extraction_data_amount = (
+            args.extraction_data_amount_per_class * args.num_classes
+        )
 
     # for legacy:
     args.data_amount = args.data_per_class_train * args.num_classes
